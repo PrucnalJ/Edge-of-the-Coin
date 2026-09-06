@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import Coin from '../components/Coin.astro';
 import { site } from '../data/site';
 import { url } from '../lib/url';
 
@@ -9,66 +10,65 @@ const topics = (await getCollection('topics')).sort(
 );
 const politics = topics.filter((t) => t.data.domain === 'politics');
 const religion = topics.filter((t) => t.data.domain === 'religion');
+
+const groups = [
+  { label: 'Politics', items: politics },
+  { label: 'Religion', items: religion },
+].filter((g) => g.items.length > 0);
 ---
 <Base title={site.name}>
-  <section>
-    <div class="stack col">
-      <h1>Edge of the Coin</h1>
+  <div class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Both sides. Every time.</p>
+      <h1>Stay on the <span class="rim">edge</span> of the coin.</h1>
       <p class="lede">{site.tagline}</p>
-      <p class="eyebrow" style="font-style:normal;">{site.epigraph}</p>
+      <p class="epigraph">{site.epigraph}</p>
     </div>
-  </section>
+    <Coin size={340} />
+  </div>
 
   <section>
-    <div class="stack-s col">
+    <div class="sec-mark">
       <p class="eyebrow">The format</p>
-      <h2>Four things worth reading, not two</h2>
+      <span class="bar"></span>
     </div>
-    <p class="col">
-      Every position gets a <b>case</b>, written as its strongest advocate would write it, and a
-      <b>cost</b>, conceded by that position's own serious thinkers. The second one is the part
-      nobody publishes, and it is the reason this site exists. Every claim is labelled as
-      empirical, values, or predictive, because most of these arguments are two people disputing
-      incompatible values while both pretend to be disputing facts.
-    </p>
-    <p class="col"><a href={url('/method/')}>Read the house rules &rarr;</a></p>
+    <h2 class="col">Four things worth reading, not two</h2>
+    <div class="stack col">
+      <p>
+        Every position gets a <b>case</b>, written as its strongest advocate would write it,
+        and a <b>cost</b>, conceded by that position's own serious thinkers. The second one is
+        the part nobody publishes, and it is the reason this site exists.
+      </p>
+      <p>
+        Every claim is labelled <b>empirical</b>, <b>values</b>, or <b>predictive</b>, because
+        most of these arguments are two people disputing incompatible values while both pretend
+        to be disputing facts. And every topic names its <b>crux</b> — the one question that,
+        if it were settled, would actually move people.
+      </p>
+      <p><a href={url('/method/')}>Read the house rules &rarr;</a></p>
+    </div>
   </section>
 
-  {topics.length > 0 && (
+  {groups.map((g) => (
     <section>
-      <div class="stack-s col">
-        <p class="eyebrow">Politics</p>
-        <h2>Topics</h2>
+      <div class="sec-mark">
+        <p class="eyebrow">{g.label}</p>
+        <span class="bar"></span>
       </div>
       <div class="topics">
-        {politics.map((t) => (
-          <a class="topic-row" href={url(`/topics/${t.id}/`)} style="text-decoration:none;">
-            <h3>{t.data.title}</h3>
+        {g.items.map((t) => (
+          <a class="topic-row" href={url(`/topics/${t.id}/`)}>
+            <span class="t">{t.data.title}</span>
             <span class="meta">{t.data.status} &middot; {t.data.positions.length} positions</span>
-            <p class="q">{t.data.question}</p>
+            <span class="q">{t.data.question}</span>
           </a>
         ))}
       </div>
     </section>
-  )}
-
-  {religion.length > 0 && (
-    <section>
-      <div class="stack-s col"><p class="eyebrow">Religion</p></div>
-      <div class="topics">
-        {religion.map((t) => (
-          <a class="topic-row" href={url(`/topics/${t.id}/`)} style="text-decoration:none;">
-            <h3>{t.data.title}</h3>
-            <span class="meta">{t.data.status} &middot; {t.data.positions.length} positions</span>
-            <p class="q">{t.data.question}</p>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
+  ))}
 
   <section>
-    <div class="col status-note">
+    <div class="col note">
       <p class="eyebrow">Status</p>
       <p>
         This site is in draft. Topics marked <b>draft</b> have not had their sourcing verified

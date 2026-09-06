@@ -1,24 +1,30 @@
 ---
 import Claim from './Claim.astro';
 
-interface Props { positions: any[]; }
-const { positions } = Astro.props;
+interface Props { positions: any[]; slug: string; }
+const { positions, slug } = Astro.props;
+const names = positions.map((p: any) => p.name);
 ---
 <div class="stack">
   <div class="faces" id="faces">
     {positions.map((p: any, i: number) => (
-      <article class="face" style={`--face-colour: var(--pos-${(i % 5) + 1});`} data-face>
+      <article class="face" style={`--face-colour: var(--pos-${(i % 5) + 1});`} data-face data-pos={i}>
         <div class="face-head">
-          <p class="name">{p.name}</p>
+          <div class="top">
+            <span class="medallion">{i + 1}</span>
+            <p class="name">{p.name}</p>
+          </div>
           <p class="summary">{p.summary}</p>
         </div>
+
         <div class="facet">
-          <p class="eyebrow">The Case <em>&mdash; as its strongest advocate would put it</em></p>
-          <ul>{p.case.map((c: any) => <Claim claim={c} />)}</ul>
+          <p class="facet-label"><span class="k">The Case</span><span class="v">as its strongest advocate would put it</span></p>
+          <ul>{p.case.map((c: any, j: number) => <Claim claim={c} posIndex={i} facet="case" index={j} />)}</ul>
         </div>
+
         <div class="facet">
-          <p class="eyebrow">The Cost <em>&mdash; conceded by its own serious thinkers</em></p>
-          <ul>{p.cost.map((c: any) => <Claim claim={c} />)}</ul>
+          <p class="facet-label"><span class="k">The Cost</span><span class="v">conceded by its own serious thinkers</span></p>
+          <ul>{p.cost.map((c: any, j: number) => <Claim claim={c} posIndex={i} facet="cost" index={j} />)}</ul>
         </div>
       </article>
     ))}
@@ -26,22 +32,69 @@ const { positions } = Astro.props;
 
   <div class="flipbar">
     <button class="flip" type="button" id="flip">Flip the coin</button>
-    <span class="eyebrow" id="order-note">Order randomised on load</span>
+    <span class="eyebrow">Order is randomised on every visit</span>
   </div>
 </div>
 
-{/* House rule: order bias is real, so which position leads is randomised per visit.
-    Runs inline before paint so no position gets a consistent first-read advantage. */}
-<script is:inline>
+{/* The scale. The site never renders a verdict, so the reader renders their own. */}
+<div class="balance" id="balance" data-slug={slug}>
+  <div class="side left" style="--side-colour: var(--pos-1);">
+    <span class="nm" id="bal-name-0">{names[0]}</span>
+    <span class="ct" id="bal-ct-0">0</span>
+  </div>
+
+  <div class="beam-wrap">
+    <svg class="beam" viewBox="0 0 300 56" role="img" aria-labelledby="beam-title">
+      <title id="beam-title">A balance showing how many considerations you have weighed toward each position</title>
+      <g class="arm" id="beam-arm">
+        <line x1="30" y1="20" x2="270" y2="20" stroke="currentColor" stroke-width="1.5" />
+        <circle cx="30" cy="20" r="2.5" fill="currentColor" />
+        <circle cx="270" cy="20" r="2.5" fill="currentColor" />
+      </g>
+      <g class="pan-l" id="beam-pan-l">
+        <line x1="30" y1="20" x2="30" y2="34" stroke="currentColor" stroke-width="1" opacity=".5" />
+        <path d="M14 34 H46 L40 44 H20 Z" fill="none" stroke="var(--pos-1)" stroke-width="1.5" />
+      </g>
+      <g class="pan-r" id="beam-pan-r">
+        <line x1="270" y1="20" x2="270" y2="34" stroke="currentColor" stroke-width="1" opacity=".5" />
+        <path d="M254 34 H286 L280 44 H260 Z" fill="none" stroke="var(--pos-2)" stroke-width="1.5" />
+      </g>
+      <path d="M150 20 L140 52 H160 Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+      <line x1="128" y1="52" x2="172" y2="52" stroke="currentColor" stroke-width="1.5" />
+    </svg>
+  </div>
+
+  <div class="side right" style="--side-colour: var(--pos-2);">
+    <span class="nm" id="bal-name-1">{names[1]}</span>
+    <span class="ct" id="bal-ct-1">0</span>
+  </div>
+
+  <p class="verdict" id="bal-verdict">
+    Mark any claim that moves you and it goes on the scale. This site will not tell you where you land.
+  </p>
+</div>
+
+<script is:inline define:vars={{ names, slug }}>
   (function () {
     var grid = document.getElementById('faces');
-    if (!grid) return;
-    var faces = Array.prototype.slice.call(grid.querySelectorAll('[data-face]'));
-    if (faces.length < 2) return;
+    var bar = document.getElementById('balance');
+    if (!grid || !bar) return;
 
-    function apply(order) {
-      order.forEach(function (pos, i) { faces[i].style.order = String(pos); });
+    var faces = Array.prototype.slice.call(grid.querySelectorAll('[data-face]'));
+    var key = 'eotc:weigh:' + slug;
+    var chosen = {};
+
+    try {
+      var saved = localStorage.getItem(key);
+      if (saved) chosen = JSON.parse(saved) || {};
+    } catch (e) { chosen = {}; }
+
+    function persist() {
+      try { localStorage.setItem(key, JSON.stringify(chosen)); } catch (e) {}
     }
+
+    /* ---- house rule: order bias is real, so randomise which position leads ---- */
+    function apply(order) { order.forEach(function (p, i) { faces[i].style.order = String(p); }); }
     function shuffle() {
       var order = faces.map(function (_, i) { return i; });
       for (var i = order.length - 1; i > 0; i--) {
@@ -50,9 +103,115 @@ const { positions } = Astro.props;
       }
       apply(order);
     }
-    shuffle();
+    if (faces.length > 1) shuffle();
 
-    var btn = document.getElementById('flip');
-    if (btn) btn.addEventListener('click', shuffle);
+    var flip = document.getElementById('flip');
+    if (flip && faces.length > 1) {
+      flip.addEventListener('click', function () {
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) { shuffle(); return; }
+        grid.classList.add('flipping');
+        setTimeout(function () { shuffle(); grid.classList.remove('flipping'); }, 420);
+      });
+    }
+
+    /* ---- the scale ---------------------------------------------------------- */
+    var armEl = document.getElementById('beam-arm');
+    var panL = document.getElementById('beam-pan-l');
+    var panR = document.getElementById('beam-pan-r');
+    var verdict = document.getElementById('bal-verdict');
+
+    function tally() {
+      var t = { counts: [0, 0], values: 0, costs: 0, total: 0 };
+      Object.keys(chosen).forEach(function (id) {
+        if (!chosen[id]) return;
+        var li = grid.querySelector('[data-claim="' + id + '"]');
+        if (!li) return;
+        var p = parseInt(li.getAttribute('data-pos'), 10);
+        t.counts[p] = (t.counts[p] || 0) + 1;
+        t.total++;
+        if (li.getAttribute('data-type') === 'values') t.values++;
+        if (li.getAttribute('data-facet') === 'cost') t.costs++;
+      });
+      return t;
+    }
+
+    function render() {
+      var t = tally();
+      var a = t.counts[0] || 0, b = t.counts[1] || 0;
+
+      var c0 = document.getElementById('bal-ct-0');
+      var c1 = document.getElementById('bal-ct-1');
+      if (c0) c0.textContent = String(a);
+      if (c1) c1.textContent = String(b);
+
+      var max = Math.max(a, b, 1);
+      var tilt = (b - a) / max;              // negative means the left pan is heavier
+      var deg = Math.max(-13, Math.min(13, tilt * 13));
+      var rad = (deg * Math.PI) / 180;
+      var half = 120;
+
+      if (armEl) armEl.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)';
+      if (panL) panL.style.transform = 'translateY(' + (-Math.sin(rad) * half).toFixed(1) + 'px)';
+      if (panR) panR.style.transform = 'translateY(' + (Math.sin(rad) * half).toFixed(1) + 'px)';
+
+      if (!verdict) return;
+
+      if (t.total === 0) {
+        verdict.innerHTML =
+          'Mark any claim that moves you and it goes on the scale. This site will not tell you where you land.';
+        return;
+      }
+
+      var lines = [];
+      if (a === b) {
+        lines.push('Level at <b>' + a + ' each</b>. You are standing on the edge, which is the hard place to stay.');
+      } else {
+        var lead = a > b ? names[0] : names[1];
+        lines.push('You have weighted <b>' + Math.max(a, b) + '</b> toward ' + lead +
+                   ' and <b>' + Math.min(a, b) + '</b> the other way.');
+      }
+
+      if (t.values > 0) {
+        lines.push('<b>' + t.values + '</b> of them ' + (t.values === 1 ? 'is a values claim' : 'are values claims') +
+                   ' — no amount of evidence will settle those. That is where you and someone who disagrees actually differ.');
+      }
+      if (t.total >= 3 && t.costs === t.total) {
+        lines.push('Everything you weighed was a cost. You are being moved by what the sides get wrong, not by what they get right.');
+      }
+
+      var reset = ' <button class="reset" type="button" id="bal-reset">Clear</button>';
+      verdict.innerHTML = lines.join(' ') + reset;
+
+      var r = document.getElementById('bal-reset');
+      if (r) r.addEventListener('click', function () {
+        chosen = {}; persist();
+        grid.querySelectorAll('[data-weigh]').forEach(function (btn) {
+          btn.setAttribute('aria-pressed', 'false');
+          btn.querySelector('.lbl').textContent = 'Weigh this';
+          var li = btn.closest('li'); if (li) li.classList.remove('weighted');
+        });
+        render();
+      });
+    }
+
+    grid.querySelectorAll('[data-weigh]').forEach(function (btn) {
+      var id = btn.getAttribute('data-weigh');
+      var li = btn.closest('li');
+      function paint() {
+        var on = !!chosen[id];
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.querySelector('.lbl').textContent = on ? 'On the scale' : 'Weigh this';
+        if (li) li.classList.toggle('weighted', on);
+      }
+      paint();
+      btn.addEventListener('click', function () {
+        chosen[id] = !chosen[id];
+        if (!chosen[id]) delete chosen[id];
+        persist(); paint(); render();
+      });
+    });
+
+    render();
   })();
 </script>

@@ -14,28 +14,35 @@ const noindex = import.meta.env.PUBLIC_NOINDEX === '1';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="color-scheme" content="light dark" />
     {noindex && <meta name="robots" content="noindex,nofollow" />}
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
     />
   </head>
   <body>
     <div class="wrap">
-      <header class="stack-s" style="padding-top:2.5rem;">
-        <a href={url('/')} class="eyebrow" style="text-decoration:none;">{site.name}</a>
-        <div class="reeding"></div>
-      </header>
+      <div class="masthead">
+        <a href={url('/')} class="wordmark"><span class="glyph"></span>Edge of the Coin</a>
+        <nav class="nav">
+          <a href={url('/')}>Topics</a>
+          <a href={url('/method/')}>Method</a>
+        </nav>
+      </div>
+      <div class="reeding"></div>
+
       <main><slot /></main>
-      <div class="reeding thin"></div>
+
+      <div class="cert-rule" style="margin-top:var(--sp-7);"></div>
       <footer class="col">
         <p>{site.name} &middot; {site.domain}</p>
         <p>
-          This site never tells you what to think. It shows you the best case and the honest
-          cost of every position, and leaves you on the edge. <a href={url('/method/')}>How we work</a>.
+          This site never tells you what to think. It sets out the best case and the honest
+          cost of every position and leaves you on the edge. <a href={url('/method/')}>How we work</a>.
         </p>
       </footer>
     </div>

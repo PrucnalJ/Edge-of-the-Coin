@@ -6,10 +6,14 @@ interface Props {
     source?: string;
     caveat?: string;
   };
+  posIndex: number;
+  facet: 'case' | 'cost';
+  index: number;
 }
-const { claim } = Astro.props;
+const { claim, posIndex, facet, index } = Astro.props;
+const id = `${posIndex}-${facet}-${index}`;
 ---
-<li>
+<li data-claim={id} data-pos={posIndex} data-facet={facet} data-type={claim.type}>
   <span class={`tag ${claim.type}`}>{claim.type}</span>{claim.text}
   {(claim.source || claim.caveat) && (
     <span class="src">
@@ -17,4 +21,7 @@ const { claim } = Astro.props;
       {claim.caveat && <><br /><b>Caveat:</b> {claim.caveat}</>}
     </span>
   )}
+  <button class="weigh" type="button" data-weigh={id} aria-pressed="false">
+    <span class="pip"></span><span class="lbl">Weigh this</span>
+  </button>
 </li>
