@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+import { site } from '../data/site';
+import { url } from '../lib/url';
+
+interface Props { title: string; description?: string; }
+const { title, description = site.tagline } = Astro.props;
+const noindex = import.meta.env.PUBLIC_NOINDEX === '1';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
+    <link rel="sitemap" href={url('/sitemap-index.xml')} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="stack-s" style="padding-top:2.5rem;">
+        <a href={url('/')} class="eyebrow" style="text-decoration:none;">{site.name}</a>
+        <div class="reeding"></div>
+      </header>
+      <main><slot /></main>
+      <div class="reeding thin"></div>
+      <footer class="col">
+        <p>{site.name} &middot; {site.domain}</p>
+        <p>
+          This site never tells you what to think. It shows you the best case and the honest
+          cost of every position, and leaves you on the edge. <a href={url('/method/')}>How we work</a>.
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>

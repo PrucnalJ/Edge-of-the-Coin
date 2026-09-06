@@ -1,0 +1,55 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Faces from '../../components/Faces.astro';
+
+export async function getStaticPaths() {
+  const topics = await getCollection('topics');
+  return topics.map((topic) => ({ params: { slug: topic.id }, props: { topic } }));
+}
+
+const { topic } = Astro.props;
+const { data } = topic;
+const { Content } = await render(topic);
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+<Base title={`${data.title} - Edge of the Coin`} description={data.question}>
+  <section>
+    <div class="stack col">
+      <p class="eyebrow">{data.domain} &middot; {data.status} &middot; updated {fmt(data.updated)}</p>
+      <h1>{data.question}</h1>
+    </div>
+    <div class="col stack"><Content /></div>
+  </section>
+
+  <section>
+    <Faces positions={data.positions} />
+  </section>
+
+  <section>
+    <div class="stack-s col"><p class="eyebrow">The crux</p></div>
+    <div class="crux col">
+      <p class="q">{data.crux.question}</p>
+      <p>{data.crux.explanation}</p>
+      <p class="pivot">{data.crux.pivot}</p>
+    </div>
+    <p class="col eyebrow" style="text-transform:none;letter-spacing:normal;font-size:.9rem;">
+      This page does not tell you where to land. That was never the point.
+    </p>
+  </section>
+
+  {data.revisions.length > 0 && (
+    <section>
+      <div class="stack-s col"><p class="eyebrow">Revision history</p></div>
+      <div class="rules col">
+        {data.revisions.map((r) => (
+          <div class="rule-row">
+            <p class="eyebrow">{fmt(r.date)}</p>
+            <p>{r.note}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+</Base>

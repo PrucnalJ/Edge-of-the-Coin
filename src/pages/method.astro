@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import { houseRules } from '../data/site';
+---
+<Base title="How we work - Edge of the Coin">
+  <section>
+    <div class="stack col">
+      <p class="eyebrow">Method</p>
+      <h1>How we work</h1>
+      <p class="lede">
+        Writing about politics and religion means being accused of bias by everyone, constantly
+        and permanently. The defence is not protesting neutrality. It is writing the rules down
+        in advance, in public, and being visibly bound by them.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="stack-s col"><p class="eyebrow">House rules</p></div>
+    <div class="rules">
+      {houseRules.map((r) => (
+        <div class="rule-row">
+          <h3>{r.name}</h3>
+          <p>{r.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <div class="stack-s col"><p class="eyebrow">Claim types</p><h2>Three kinds of claim</h2></div>
+    <div class="rules col">
+      <div class="rule-row">
+        <p><span class="tag empirical">Empirical</span></p>
+        <p>A claim about the world. Carries a source, can be checked, and can be wrong.</p>
+      </div>
+      <div class="rule-row">
+        <p><span class="tag values">Values</span></p>
+        <p>A moral premise. No amount of data settles it. Labelling it stops you waiting for evidence that cannot exist.</p>
+      </div>
+      <div class="rule-row">
+        <p><span class="tag predictive">Predictive</span></p>
+        <p>A forecast about consequences. Reasonable now, possibly false later, and flagged so the page gets revisited.</p>
+      </div>
+    </div>
+    <p class="col" style="font-size:.9rem;color:var(--muted);">
+      The tags differ in border - solid, dotted, dashed - not only in colour, so the distinction
+      survives on a phone in sunlight, in print, and for a colourblind reader.
+    </p>
+  </section>
+
+  <section>
+    <div class="col status-note">
+      <p class="eyebrow">If we got your side wrong</p>
+      <p>
+        The steelman rule is the one we most want to be held to. If a position you hold is
+        misrepresented here, tell us and it gets corrected in the open, with the change recorded
+        on the page.
+      </p>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { site } from '../data/site';
+import { url } from '../lib/url';
+
+const topics = (await getCollection('topics')).sort(
+  (a, b) => b.data.updated.valueOf() - a.data.updated.valueOf()
+);
+const politics = topics.filter((t) => t.data.domain === 'politics');
+const religion = topics.filter((t) => t.data.domain === 'religion');
+---
+<Base title={site.name}>
+  <section>
+    <div class="stack col">
+      <h1>Edge of the Coin</h1>
+      <p class="lede">{site.tagline}</p>
+      <p class="eyebrow" style="font-style:normal;">{site.epigraph}</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="stack-s col">
+      <p class="eyebrow">The format</p>
+      <h2>Four things worth reading, not two</h2>
+    </div>
+    <p class="col">
+      Every position gets a <b>case</b>, written as its strongest advocate would write it, and a
+      <b>cost</b>, conceded by that position's own serious thinkers. The second one is the part
+      nobody publishes, and it is the reason this site exists. Every claim is labelled as
+      empirical, values, or predictive, because most of these arguments are two people disputing
+      incompatible values while both pretend to be disputing facts.
+    </p>
+    <p class="col"><a href={url('/method/')}>Read the house rules &rarr;</a></p>
+  </section>
+
+  {topics.length > 0 && (
+    <section>
+      <div class="stack-s col">
+        <p class="eyebrow">Politics</p>
+        <h2>Topics</h2>
+      </div>
+      <div class="topics">
+        {politics.map((t) => (
+          <a class="topic-row" href={url(`/topics/${t.id}/`)} style="text-decoration:none;">
+            <h3>{t.data.title}</h3>
+            <span class="meta">{t.data.status} &middot; {t.data.positions.length} positions</span>
+            <p class="q">{t.data.question}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {religion.length > 0 && (
+    <section>
+      <div class="stack-s col"><p class="eyebrow">Religion</p></div>
+      <div class="topics">
+        {religion.map((t) => (
+          <a class="topic-row" href={url(`/topics/${t.id}/`)} style="text-decoration:none;">
+            <h3>{t.data.title}</h3>
+            <span class="meta">{t.data.status} &middot; {t.data.positions.length} positions</span>
+            <p class="q">{t.data.question}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section>
+    <div class="col status-note">
+      <p class="eyebrow">Status</p>
+      <p>
+        This site is in draft. Topics marked <b>draft</b> have not had their sourcing verified
+        line by line and are not finished work. Nothing here is published in the sense that
+        matters yet.
+      </p>
+    </div>
+  </section>
+</Base>

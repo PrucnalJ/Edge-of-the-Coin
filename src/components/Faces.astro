@@ -1,0 +1,58 @@
+---
+import Claim from './Claim.astro';
+
+interface Props { positions: any[]; }
+const { positions } = Astro.props;
+---
+<div class="stack">
+  <div class="faces" id="faces">
+    {positions.map((p: any, i: number) => (
+      <article class="face" style={`--face-colour: var(--pos-${(i % 5) + 1});`} data-face>
+        <div class="face-head">
+          <p class="name">{p.name}</p>
+          <p class="summary">{p.summary}</p>
+        </div>
+        <div class="facet">
+          <p class="eyebrow">The Case <em>&mdash; as its strongest advocate would put it</em></p>
+          <ul>{p.case.map((c: any) => <Claim claim={c} />)}</ul>
+        </div>
+        <div class="facet">
+          <p class="eyebrow">The Cost <em>&mdash; conceded by its own serious thinkers</em></p>
+          <ul>{p.cost.map((c: any) => <Claim claim={c} />)}</ul>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <div class="flipbar">
+    <button class="flip" type="button" id="flip">Flip the coin</button>
+    <span class="eyebrow" id="order-note">Order randomised on load</span>
+  </div>
+</div>
+
+{/* House rule: order bias is real, so which position leads is randomised per visit.
+    Runs inline before paint so no position gets a consistent first-read advantage. */}
+<script is:inline>
+  (function () {
+    var grid = document.getElementById('faces');
+    if (!grid) return;
+    var faces = Array.prototype.slice.call(grid.querySelectorAll('[data-face]'));
+    if (faces.length < 2) return;
+
+    function apply(order) {
+      order.forEach(function (pos, i) { faces[i].style.order = String(pos); });
+    }
+    function shuffle() {
+      var order = faces.map(function (_, i) { return i; });
+      for (var i = order.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = order[i]; order[i] = order[j]; order[j] = t;
+      }
+      apply(order);
+    }
+    shuffle();
+
+    var btn = document.getElementById('flip');
+    if (btn) btn.addEventListener('click', shuffle);
+  })();
+</script>

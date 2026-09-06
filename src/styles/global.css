@@ -1,0 +1,220 @@
+/* Edge of the Coin - design tokens.
+   Position colours are coin metals, matched in weight and saturation so no position
+   reads as the favoured one. Deliberately NOT red and blue: on a site about American
+   politics that palette arrives pre-loaded with a verdict. */
+
+:root {
+  --ground:       #E6E9E7;
+  --surface:      #F8FAF9;
+  --surface-sunk: #DDE2E0;
+  --ink:          #171B1A;
+  --ink-soft:     #3B4341;
+  --muted:        #5C6462;
+  --rule:         #C2C9C6;
+  --rule-soft:    #D5DAD8;
+
+  /* position ramp - bronze, patina, oxide, slate, moss */
+  --pos-1: #8A6A2F;
+  --pos-2: #2F6B63;
+  --pos-3: #6B3F5E;
+  --pos-4: #41566E;
+  --pos-5: #4C6B3A;
+
+  --measure: 40rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:       #101413;
+    --surface:      #181C1B;
+    --surface-sunk: #0B0E0D;
+    --ink:          #E7ECEA;
+    --ink-soft:     #C3CAC8;
+    --muted:        #949D9A;
+    --rule:         #2F3634;
+    --rule-soft:    #242A29;
+    --pos-1: #C9A85C;
+    --pos-2: #6FB4A8;
+    --pos-3: #B78BA8;
+    --pos-4: #8AA3C0;
+    --pos-5: #9BBC80;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:       #101413;
+  --surface:      #181C1B;
+  --surface-sunk: #0B0E0D;
+  --ink:          #E7ECEA;
+  --ink-soft:     #C3CAC8;
+  --muted:        #949D9A;
+  --rule:         #2F3634;
+  --rule-soft:    #242A29;
+  --pos-1: #C9A85C;
+  --pos-2: #6FB4A8;
+  --pos-3: #B78BA8;
+  --pos-4: #8AA3C0;
+  --pos-5: #9BBC80;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 6rem;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+.col  { max-width: var(--measure); }
+
+h1, h2, h3 {
+  margin: 0;
+  font-family: Newsreader, "Iowan Old Style", Georgia, serif;
+  font-weight: 400;
+  line-height: 1.16;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2.2rem, 5.5vw, 3.4rem); letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem);     letter-spacing: -0.014em; }
+h3 { font-size: 1.1rem; }
+
+p { margin: 0; }
+a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--pos-2); outline-offset: 3px; }
+
+/* The milling on a coin's rim. The site's one recurring graphic device. */
+.reeding {
+  height: 11px;
+  background-image: repeating-linear-gradient(90deg, var(--rule) 0 1px, transparent 1px 5px);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.reeding.thin { height: 7px; opacity: .75; }
+
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .688rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lede {
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.stack   { display: flex; flex-direction: column; gap: 1.15rem; }
+.stack-s { display: flex; flex-direction: column; gap: .55rem; }
+main     { display: flex; flex-direction: column; gap: 4rem; padding-top: 2.5rem; }
+section  { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ---- claim tags: border style carries the meaning, not colour alone,
+       so the distinction survives greyscale and colourblind readers ---- */
+.tag {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .625rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .06rem .42rem;
+  margin-right: .35rem;
+  color: var(--muted);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.tag.empirical  { border: 1px solid var(--rule); }
+.tag.values     { border: 1px dotted var(--muted); }
+.tag.predictive { border: 1px dashed var(--muted); }
+
+.src { display: block; margin-top: .3rem; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+.src b { font-weight: 500; }
+
+/* ---- faces: one column per position, 2..N ---- */
+.faces {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  border-top: 1px solid var(--ink);
+  background: var(--surface);
+}
+.face {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.face:first-child { border-left: none; }
+.face-head {
+  display: flex; flex-direction: column; gap: .3rem;
+  padding: 1rem 1.15rem;
+  background: var(--surface-sunk);
+  border-bottom: 1px solid var(--rule);
+}
+.face-head .name {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .75rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--face-colour);
+}
+.face-head .summary { font-size: .875rem; color: var(--ink-soft); line-height: 1.5; }
+
+.facet { padding: 1.05rem 1.15rem; display: flex; flex-direction: column; gap: .85rem; }
+.facet + .facet { border-top: 1px solid var(--rule-soft); }
+.facet > .eyebrow { color: var(--ink); }
+.facet > .eyebrow em { font-style: normal; color: var(--muted); letter-spacing: .02em; text-transform: none; }
+.facet ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .9rem; }
+.facet li { font-size: .925rem; line-height: 1.55; }
+
+.flipbar { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.flip {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--rule); padding: .4rem .8rem; cursor: pointer;
+}
+.flip:hover { background: var(--surface-sunk); }
+
+/* ---- crux ---- */
+.crux { border-left: 3px solid var(--ink); padding: .1rem 0 .1rem 1.15rem; display: flex; flex-direction: column; gap: .65rem; }
+.crux .q { font-family: Newsreader, Georgia, serif; font-size: 1.2rem; line-height: 1.4; }
+.crux p  { font-size: .95rem; color: var(--ink-soft); }
+.crux .pivot { font-size: .875rem; color: var(--muted); }
+
+/* ---- listings ---- */
+.topics { display: flex; flex-direction: column; }
+.topic-row {
+  display: grid; grid-template-columns: 1fr auto; gap: .35rem 1.5rem;
+  padding: 1.15rem 0; border-top: 1px solid var(--rule-soft); align-items: baseline;
+}
+.topics .topic-row:last-child { border-bottom: 1px solid var(--rule-soft); }
+.topic-row h3 { font-size: 1.25rem; }
+.topic-row .q { font-size: .9rem; color: var(--muted); grid-column: 1 / -1; }
+.topic-row .meta { font-family: "IBM Plex Mono", monospace; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+.rules { display: flex; flex-direction: column; }
+.rule-row { display: grid; grid-template-columns: minmax(0, 13rem) 1fr; gap: .3rem 1.5rem; padding: .95rem 0; border-top: 1px solid var(--rule-soft); }
+.rules .rule-row:last-child { border-bottom: 1px solid var(--rule-soft); }
+.rule-row p { font-size: .9rem; color: var(--ink-soft); }
+
+.status-note {
+  background: var(--surface); border: 1px solid var(--rule);
+  padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .4rem;
+}
+.status-note p { font-size: .9rem; color: var(--ink-soft); }
+
+footer { color: var(--muted); font-size: .85rem; padding-top: 1.4rem; display: flex; flex-direction: column; gap: .5rem; }
+
+@media (max-width: 640px) {
+  .face { border-left: none; border-top: 1px solid var(--rule); }
+  .faces { border-top: none; }
+  .rule-row { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

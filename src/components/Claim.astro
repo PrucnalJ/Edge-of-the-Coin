@@ -1,0 +1,20 @@
+---
+interface Props {
+  claim: {
+    type: 'empirical' | 'values' | 'predictive';
+    text: string;
+    source?: string;
+    caveat?: string;
+  };
+}
+const { claim } = Astro.props;
+---
+<li>
+  <span class={`tag ${claim.type}`}>{claim.type}</span>{claim.text}
+  {(claim.source || claim.caveat) && (
+    <span class="src">
+      {claim.source}
+      {claim.caveat && <><br /><b>Caveat:</b> {claim.caveat}</>}
+    </span>
+  )}
+</li>
