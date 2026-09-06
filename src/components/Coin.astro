@@ -1,122 +1,250 @@
 ---
 /**
- * A struck coin, spinning on its edge.
+ * A struck coin, turning on its edge.
  *
- * Drawn as an actual cylinder rather than a flat disc: the two faces are
- * pre-rendered guilloché — the engine-turned lattice used as security printing
- * on banknotes and share certificates — and the milled rim between them is
- * computed each frame, so as the coin turns the reeding compresses toward the
- * silhouette the way it does on a real coin spinning on a table.
+ * Drawn as a real cylinder rather than a flat disc: two engraved faces and a
+ * milled rim computed each frame, so the reeding compresses into the silhouette
+ * the way it does on a coin spinning on a table.
  *
- * The obverse is struck in the first position metal and the reverse in the
- * second, so the coin carries both sides. Twice per turn it presents nothing
- * but its edge, which is the whole point of the place.
+ * The faces are struck like a medal — raised bead border, arc inscriptions, and
+ * a device in relief — rather than printed. Relief is what makes metal read as
+ * metal, so every engraved element is drawn three times: a dark pass offset
+ * down-right, a light pass offset up-left, then the mid tone on top.
+ *
+ * The metals are deliberately NOT theme tokens. A coin is an object, not page
+ * chrome; bronze stays bronze whatever the page behind it is doing.
  */
 interface Props { size?: number; }
 const { size = 340 } = Astro.props;
 ---
-<div class="coin" id="coin">
+<div class="coin" id="coin" title="Click to spin">
   <canvas id="coin-canvas" width={size * 2} height={size * 2} role="img"
-    aria-label="A coin turning slowly on its edge, one face struck in bronze and the other in patina."></canvas>
+    aria-label="A coin turning on its edge. One face is struck in bronze with a balance and the motto Audi Alteram Partem; the other in nickel with a coin standing on its edge."></canvas>
 </div>
 
 <script is:inline define:vars={{ size }}>
   (function () {
     var cv = document.getElementById('coin-canvas');
+    var host = document.getElementById('coin');
     if (!cv || !cv.getContext) return;
     var ctx = cv.getContext('2d');
 
     var S = size * 2;
     var cx = S / 2, cy = S / 2;
-    var R = S * 0.43;          // face radius
-    var T = R * 0.15;          // thickness
+    var R = S * 0.43;
+    var T = R * 0.16;
 
-    var css = getComputedStyle(document.documentElement);
-    function tok(n, fb) { return (css.getPropertyValue(n) || fb).trim(); }
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // hi / lo are the relief highlight and shadow; mid is the raised surface
+    // itself; f1 and f2 light the field from upper left to lower right.
+    var BRONZE = { hi: '#EBD8A9', mid: '#8E6B2C', lo: '#4A3413', f1: '#CBA968', f2: '#7B5C28' };
+    var NICKEL = { hi: '#F4F7F5', mid: '#8F9A96', lo: '#4C5451', f1: '#DCE2DF', f2: '#8A9591' };
 
-    /* ---------------------------------------------------------------------
-       Faces are drawn once into offscreen canvases. Re-stroking several hundred
-       guilloché ellipses every frame would be wasteful; scaling a bitmap is not.
-       --------------------------------------------------------------------- */
-    function makeFace(primary, secondary) {
+    /* ------------------------------------------------------------------ */
+    /* face rendering                                                      */
+    /* ------------------------------------------------------------------ */
+
+    function arcText(g, fx, fy, str, r, opts) {
+      g.save();
+      g.translate(fx, fy);
+      g.font = opts.font;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+
+      var chars = str.split('');
+      var sp = opts.spacing || 0;
+      var widths = chars.map(function (c) { return g.measureText(c).width + sp; });
+      var total = widths.reduce(function (a, b) { return a + b; }, 0);
+      var dir = opts.flip ? -1 : 1;
+      var a = opts.at - dir * (total / r) / 2;
+
+      for (var i = 0; i < chars.length; i++) {
+        var wAng = widths[i] / r;
+        g.save();
+        g.rotate(a + dir * wAng / 2);
+        g.translate(0, -r);
+        if (opts.flip) g.rotate(Math.PI);
+        // relief: shadow below, highlight above, raised surface on top
+        g.fillStyle = opts.m.lo;  g.fillText(chars[i], 1.6, 1.6);
+        g.fillStyle = opts.m.hi;  g.fillText(chars[i], -1.4, -1.4);
+        g.fillStyle = opts.m.mid; g.fillText(chars[i], 0, 0);
+        g.restore();
+        a += dir * wAng;
+      }
+      g.restore();
+    }
+
+    /** Draw a path three times to raise it off the field. */
+    function relief(g, draw, m, depth) {
+      g.save(); g.translate(depth, depth);  draw(g, m.lo);  g.restore();
+      g.save(); g.translate(-depth, -depth); draw(g, m.hi); g.restore();
+      draw(g, m.mid);
+    }
+
+    /** Obverse device: a balance. The reader does the weighing on this site. */
+    function balance(g, fx, fy, k) {
+      return function (gg, colour) {
+        gg.strokeStyle = colour;
+        gg.fillStyle = colour;
+        gg.lineWidth = k * 0.055;
+        gg.lineCap = 'round';
+        gg.lineJoin = 'round';
+
+        gg.beginPath();                        // beam
+        gg.moveTo(fx - k, fy - k * 0.42);
+        gg.lineTo(fx + k, fy - k * 0.42);
+        gg.stroke();
+
+        gg.beginPath();                        // column
+        gg.moveTo(fx, fy - k * 0.42);
+        gg.lineTo(fx, fy + k * 0.62);
+        gg.stroke();
+
+        gg.beginPath();                        // foot
+        gg.moveTo(fx - k * 0.46, fy + k * 0.62);
+        gg.lineTo(fx + k * 0.46, fy + k * 0.62);
+        gg.stroke();
+
+        [-1, 1].forEach(function (s) {         // hangers and pans
+          gg.beginPath();
+          gg.moveTo(fx + s * k, fy - k * 0.42);
+          gg.lineTo(fx + s * k, fy - k * 0.02);
+          gg.stroke();
+          gg.beginPath();
+          gg.moveTo(fx + s * k - k * 0.34, fy - k * 0.02);
+          gg.lineTo(fx + s * k + k * 0.34, fy - k * 0.02);
+          gg.lineTo(fx + s * k + k * 0.2, fy + k * 0.24);
+          gg.lineTo(fx + s * k - k * 0.2, fy + k * 0.24);
+          gg.closePath();
+          gg.stroke();
+        });
+      };
+    }
+
+    /** Reverse device: a coin standing on its edge. */
+    function onEdge(g, fx, fy, k) {
+      return function (gg, colour) {
+        gg.strokeStyle = colour;
+        gg.lineWidth = k * 0.055;
+        gg.lineCap = 'round';
+
+        gg.beginPath();                        // the coin, seen edge-on
+        gg.ellipse(fx, fy - k * 0.06, k * 0.2, k * 0.78, 0, 0, Math.PI * 2);
+        gg.stroke();
+
+        for (var i = -6; i <= 6; i++) {        // its reeding
+          var t = i / 7;
+          var y = fy - k * 0.06 + t * k * 0.7;
+          var w = k * 0.2 * Math.sqrt(Math.max(0, 1 - t * t)) * 0.85;
+          gg.beginPath();
+          gg.moveTo(fx - w, y);
+          gg.lineTo(fx + w, y);
+          gg.stroke();
+        }
+
+        gg.beginPath();                        // the table it stands on
+        gg.moveTo(fx - k * 0.82, fy + k * 0.78);
+        gg.lineTo(fx + k * 0.82, fy + k * 0.78);
+        gg.stroke();
+      };
+    }
+
+    function makeFace(m, top, bottom, device) {
       var f = document.createElement('canvas');
       f.width = f.height = S;
       var g = f.getContext('2d');
       var fx = S / 2, fy = S / 2;
 
+      // --- field, lit from the upper left --------------------------------
+      var field = g.createLinearGradient(fx - R, fy - R, fx + R, fy + R);
+      field.addColorStop(0, m.f1);
+      field.addColorStop(1, m.f2);
       g.beginPath();
       g.arc(fx, fy, R, 0, Math.PI * 2);
-      g.fillStyle = tok('--surface', '#F7F9F7');
+      g.fillStyle = field;
       g.fill();
 
-      g.lineWidth = 1.15;
+      // --- raised rim ----------------------------------------------------
+      g.lineWidth = R * 0.055;
+      g.strokeStyle = m.lo;
+      g.beginPath(); g.arc(fx, fy, R * 0.965, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = m.hi;
+      g.lineWidth = R * 0.03;
+      g.beginPath(); g.arc(fx, fy, R * 0.955, Math.PI * 0.9, Math.PI * 1.75); g.stroke();
+      g.strokeStyle = m.lo;
+      g.beginPath(); g.arc(fx, fy, R * 0.955, Math.PI * -0.1, Math.PI * 0.75); g.stroke();
 
-      // Bands of overlapping ellipses: where they cross they cut the lens
-      // lattice that engine turning produces.
-      var bands = [
-        { c: primary,                 ring: 0.70, circ: 0.26, n: 54, sq: 0.72, a: 0.58 },
-        { c: tok('--ink', '#141817'), ring: 0.58, circ: 0.20, n: 42, sq: 0.66, a: 0.18 },
-        { c: secondary,               ring: 0.46, circ: 0.19, n: 36, sq: 0.70, a: 0.46 },
-        { c: primary,                 ring: 0.27, circ: 0.13, n: 26, sq: 0.68, a: 0.44 },
-      ];
-      bands.forEach(function (B) {
-        g.strokeStyle = B.c;
-        g.globalAlpha = B.a;
-        for (var i = 0; i < B.n; i++) {
-          var ang = (i / B.n) * Math.PI * 2;
-          var ox = fx + Math.cos(ang) * R * B.ring;
-          var oy = fy + Math.sin(ang) * R * B.ring;
-          g.beginPath();
-          g.ellipse(ox, oy, R * B.circ, R * B.circ * B.sq, ang, 0, Math.PI * 2);
-          g.stroke();
-        }
+      // --- bead border, the giveaway that something is a struck coin -----
+      var beads = 108;
+      for (var i = 0; i < beads; i++) {
+        var a = (i / beads) * Math.PI * 2;
+        var bx = fx + Math.cos(a) * R * 0.885;
+        var by = fy + Math.sin(a) * R * 0.885;
+        var rr = R * 0.019;
+        g.beginPath(); g.arc(bx + 1.2, by + 1.2, rr, 0, Math.PI * 2);
+        g.fillStyle = m.lo; g.fill();
+        g.beginPath(); g.arc(bx - 0.9, by - 0.9, rr, 0, Math.PI * 2);
+        g.fillStyle = m.hi; g.fill();
+        g.beginPath(); g.arc(bx, by, rr * 0.86, 0, Math.PI * 2);
+        g.fillStyle = m.mid; g.fill();
+      }
+
+      // --- inscriptions ---------------------------------------------------
+      var font = 'Bodoni Moda, Didot, Georgia, serif';
+      arcText(g, fx, fy, top, R * 0.755, {
+        at: 0, flip: false, spacing: R * 0.03, m: m,
+        font: '500 ' + Math.round(R * 0.105) + 'px ' + font,
+      });
+      arcText(g, fx, fy, bottom, R * 0.755, {
+        at: Math.PI, flip: true, spacing: R * 0.028, m: m,
+        font: '500 ' + Math.round(R * 0.08) + 'px ' + font,
       });
 
-      // the field is finished with concentric hairlines
-      g.globalAlpha = 0.55;
-      g.strokeStyle = tok('--rule', '#B9C1BD');
-      [0.985, 0.95].forEach(function (k) {
+      // --- device in relief ------------------------------------------------
+      relief(g, device(g, fx, fy - R * 0.02, R * 0.3), m, R * 0.012);
+
+      // --- two small stops separating the inscriptions ---------------------
+      [-1, 1].forEach(function (s) {
         g.beginPath();
-        g.arc(fx, fy, R * k, 0, Math.PI * 2);
-        g.stroke();
+        g.arc(fx + s * R * 0.755, fy, R * 0.022, 0, Math.PI * 2);
+        g.fillStyle = m.lo; g.fill();
       });
-
-      // central device
-      g.globalAlpha = 0.9;
-      g.fillStyle = tok('--ink', '#141817');
-      g.beginPath();
-      g.arc(fx, fy, R * 0.035, 0, Math.PI * 2);
-      g.fill();
-      g.globalAlpha = 1;
 
       return f;
     }
 
     var faceA, faceB;
     function buildFaces() {
-      faceA = makeFace(tok('--pos-1', '#8A6A2F'), tok('--pos-2', '#2F6B63'));
-      faceB = makeFace(tok('--pos-2', '#2F6B63'), tok('--pos-1', '#8A6A2F'));
+      faceA = makeFace(BRONZE, 'EDGE OF THE COIN', 'AUDI ALTERAM PARTEM', balance);
+      faceB = makeFace(NICKEL, 'BOTH SIDES EVERY TIME', 'ONE IN SIX THOUSAND', onEdge);
     }
     buildFaces();
 
-    /* ---------------------------------------------------------------------
-       One frame. Orthographic projection of a cylinder turning about its
-       vertical axis: a local point (x, y, z) lands at screen x of
-       x·cos0 + z·sin0, so each face centre sits +/-(T/2)·sin0 off the axis and
-       the face is foreshortened to |cos0|.
-       --------------------------------------------------------------------- */
+    // Canvas takes a snapshot of the font situation at draw time, so re-strike
+    // once the display face has actually arrived.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        buildFaces();
+        if (!spinning) frame(still);
+      });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* the cylinder                                                        */
+    /* ------------------------------------------------------------------ */
+
     function frame(theta) {
       ctx.clearRect(0, 0, S, S);
 
       var cosT = Math.cos(theta), sinT = Math.sin(theta);
-      var xA = cx + (T / 2) * sinT;     // obverse centre
-      var xB = cx - (T / 2) * sinT;     // reverse centre
+      var xA = cx + (T / 2) * sinT;
+      var xB = cx - (T / 2) * sinT;
       var semi = R * Math.abs(cosT);
       var left = Math.min(xA, xB), right = Math.max(xA, xB);
+      var edgeMetal = cosT > 0 ? BRONZE : NICKEL;
 
-      // --- the rim: the silhouette spanning the two face ellipses ----------
+      // rim silhouette spanning the two face ellipses
       ctx.beginPath();
       ctx.moveTo(left, cy - R);
       ctx.lineTo(right, cy - R);
@@ -126,25 +254,23 @@ const { size = 340 } = Astro.props;
       ctx.closePath();
 
       var grad = ctx.createLinearGradient(left - semi, 0, right + semi, 0);
-      grad.addColorStop(0.0, tok('--surface-sunk', '#DCE1DE'));
-      grad.addColorStop(0.5, tok('--surface', '#F7F9F7'));
-      grad.addColorStop(1.0, tok('--surface-sunk', '#DCE1DE'));
+      grad.addColorStop(0.00, edgeMetal.f2);
+      grad.addColorStop(0.42, edgeMetal.f1);
+      grad.addColorStop(1.00, edgeMetal.f2);
       ctx.fillStyle = grad;
       ctx.fill();
 
       ctx.save();
       ctx.clip();
-
-      // --- milling: grooves run parallel to the coin's axis ----------------
-      // A groove sits at angle phi around the disc, and is on the near side
-      // only when its outward normal has turned toward the viewer.
-      ctx.strokeStyle = tok('--ink', '#141817');
-      ctx.globalAlpha = 0.3;
-      ctx.lineWidth = 1.1;
+      // Milling: a groove at angle phi shows only once its outward normal has
+      // turned toward the viewer.
+      ctx.strokeStyle = edgeMetal.lo;
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 1.3;
       var steps = 190;
       for (var i = 0; i < steps; i++) {
         var phi = (i / steps) * Math.PI * 2;
-        if (-Math.cos(phi) * sinT <= 0) continue;          // far side of the rim
+        if (-Math.cos(phi) * sinT <= 0) continue;
         var y = cy + R * Math.sin(phi);
         var xc = cx + R * Math.cos(phi) * cosT;
         ctx.beginPath();
@@ -155,12 +281,11 @@ const { size = 340 } = Astro.props;
       ctx.globalAlpha = 1;
       ctx.restore();
 
-      // rim outline
-      ctx.strokeStyle = tok('--rule', '#B9C1BD');
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = edgeMetal.lo;
+      ctx.lineWidth = 1.4;
       ctx.stroke();
 
-      // --- whichever face is turned toward the viewer ----------------------
+      // the face turned toward the viewer
       if (semi > 0.6) {
         var face = cosT > 0 ? faceA : faceB;
         var xV = cosT > 0 ? xA : xB;
@@ -169,79 +294,78 @@ const { size = 340 } = Astro.props;
         ctx.scale(Math.abs(cosT), 1);
         ctx.drawImage(face, -S / 2, -S / 2);
         ctx.restore();
-
-        ctx.beginPath();
-        ctx.ellipse(xV, cy, semi, R, 0, 0, Math.PI * 2);
-        ctx.strokeStyle = tok('--rule', '#B9C1BD');
-        ctx.lineWidth = 1.1;
-        ctx.stroke();
       }
     }
 
-    /* ---------------------------------------------------------------------
-       Motion: comes in fast and eases down to a slow steady turn, the way a
-       coin set spinning on a table does.
-       --------------------------------------------------------------------- */
-    var REST = 0.30;   // radians/sec once settled - a full turn in about 21s
+    /* ------------------------------------------------------------------ */
+    /* motion                                                              */
+    /* ------------------------------------------------------------------ */
 
-    if (reduce) {
-      // Held still, a little off square, so the rim and one face both read.
-      frame(-0.42);
+    var REST = 0.30;             // rad/sec once settled: a turn in ~21s
+    var still = -0.42;           // a resting angle where rim and face both read
+    var theta = -0.55;
+    var spin = 7.2;
+    var boost = 0;
+    var last = null;
+    var spinning = false;
+    var visible = true;
+
+    function tick(now) {
+      if (!spinning) return;
+      if (last === null) last = now;
+      var dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      spin += (REST - spin) * Math.min(dt * 1.35, 1);
+      theta += (spin + boost) * dt;
+      boost *= Math.pow(0.12, dt);
+
+      frame(theta);
+
+      // With reduced motion we honour the request and coast to a stop rather
+      // than turning forever, but a deliberate tap is still allowed to spin it.
+      if (reduce.matches && spin + boost < 0.45) { spinning = false; return; }
+      requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (spinning || !visible) return;
+      spinning = true;
+      last = null;
+      requestAnimationFrame(tick);
+    }
+    function stop() { spinning = false; }
+
+    if (reduce.matches) {
+      frame(still);
     } else {
-      var theta = -0.55;
-      var last = null;
-      var spin = 7.2;
-      var boost = 0;
-      var running = false;
-
-      var tick = function (now) {
-        if (!running) return;
-        if (last === null) last = now;
-        var dt = Math.min((now - last) / 1000, 0.05);
-        last = now;
-
-        spin += (REST - spin) * Math.min(dt * 1.35, 1);
-        theta += (spin + boost) * dt;
-        boost *= Math.pow(0.12, dt);
-
-        frame(theta);
-        requestAnimationFrame(tick);
-      };
-
-      function start() {
-        if (running) return;
-        running = true;
-        last = null;              // do not integrate the time spent paused
-        requestAnimationFrame(tick);
-      }
-      function stop() { running = false; }
-
-      var host = document.getElementById('coin');
-
-      // Don't burn a frame loop on a coin nobody can see.
-      if (host && 'IntersectionObserver' in window) {
-        new IntersectionObserver(function (entries) {
-          entries[0].isIntersecting ? start() : stop();
-        }, { threshold: 0 }).observe(host);
-      } else {
-        start();
-      }
-
-      if (host) {
-        host.addEventListener('click', function () { boost += 9; start(); });
-        host.addEventListener('mouseenter', function () { boost += 2.6; start(); });
-      }
+      frame(theta);
+      start();
     }
 
-    // Re-strike in the right metals when the theme changes.
-    var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    if (mq.addEventListener) {
-      mq.addEventListener('change', function () {
-        setTimeout(function () {
-          css = getComputedStyle(document.documentElement);
-          buildFaces();
-          if (reduce) frame(-0.42);
-        }, 40);
+    // Don't run a frame loop for a coin nobody can see.
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (e) {
+        visible = e[0].isIntersecting;
+        if (!visible) stop();
+        else if (!reduce.matches) start();
+      }, { threshold: 0 }).observe(host);
+    }
+
+    // A nudge sets it going again. `click` covers touch as well as mouse.
+    host.addEventListener('click', function () {
+      spin = Math.max(spin, 1.2); boost += 9; start();
+    });
+    host.addEventListener('mouseenter', function () {
+      if (reduce.matches) return;
+      boost += 2.6; start();
+    });
+
+    // If the visitor turns reduced motion on or off mid-visit, respect it.
+    if (reduce.addEventListener) {
+      reduce.addEventListener('change', function () {
+        if (reduce.matches) { stop(); frame(still); }
+        else start();
       });
     }
   })();
