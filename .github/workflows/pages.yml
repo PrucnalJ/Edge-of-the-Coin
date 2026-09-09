@@ -1,5 +1,5 @@
 # Temporary review deployment to GitHub Pages at
-# https://prucnalj.github.io/Edge-of-the-Coin/. Production hosting is not chosen yet.
+# https://prucnal-sachdev.github.io/Edge-of-the-Coin/. Production hosting is not chosen yet.
 # This workflow exists only so the site can be reviewed before edgeofthecoin.com is cut over.
 name: Deploy preview to GitHub Pages
 
@@ -34,7 +34,7 @@ jobs:
       - run: npm run audit
       - run: npm run build
         env:
-          SITE_URL: https://prucnalj.github.io
+          SITE_URL: https://prucnal-sachdev.github.io
           BASE_PATH: /Edge-of-the-Coin
           PUBLIC_NOINDEX: '1'
       - uses: actions/upload-pages-artifact@v3

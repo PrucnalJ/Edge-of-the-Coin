@@ -16,7 +16,7 @@ See README.md for commands and how to write a topic.
   the format. The domain is registered and currently serving a registrar parking page.
 - The specimen topic (`capital-punishment.md`) is marked `status: draft`. Its sourcing has
   **not** been verified line by line. Do not publish it or treat its citations as checked.
-- Source is on GitHub under the PrucnalJ account. If the GitHub CLI is switched to another
+- Source is on GitHub under the prucnal-sachdev organization. If the GitHub CLI is switched to another
   account, run `gh auth switch --user PrucnalJ` before pushing.
 - No hosting decision yet. `.github/workflows/pages.yml` is set up for a GitHub Pages review
   copy, but Pages has not been enabled and the repo is private, so no preview is live.
